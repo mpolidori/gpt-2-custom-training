@@ -44,6 +44,7 @@ parser.add_argument('--restore_from', type=str, default='latest', help='Either "
 parser.add_argument('--run_name', type=str, default='run1', help='Run id. Name of subdirectory in checkpoint/ and samples/')
 parser.add_argument('--sample_every', metavar='N', type=int, default=100, help='Generate samples every N steps')
 parser.add_argument('--sample_length', metavar='TOKENS', type=int, default=1023, help='Sample this many tokens')
+parser.add_argument('--sample_size', metavar='N', type=int, default=256, help='Sample size in MB')
 parser.add_argument('--sample_num', metavar='N', type=int, default=1, help='Generate this many samples')
 parser.add_argument('--save_every', metavar='N', type=int, default=1000, help='Write a checkpoint every N steps')
 
@@ -180,12 +181,13 @@ def main():
                 val_chunks = chunks
         print('dataset has', data_sampler.total_size, 'tokens')
         print('Training...')
+        sample_size = args.sample_size
 
         if args.val_every > 0:
             # Sample from validation set once with fixed seed to make
             # it deterministic during training as well as across runs.
             val_data_sampler = Sampler(val_chunks, seed=1)
-            val_batches = [[val_data_sampler.sample(1024) for _ in range(args.val_batch_size)]
+            val_batches = [[val_data_sampler.sample(sample_size) for _ in range(args.val_batch_size)]
                            for _ in range(args.val_batch_count)]
 
         counter = 1
@@ -247,8 +249,8 @@ def main():
                     time=time.time() - start_time,
                     loss=v_val_loss))
 
-        def sample_batch():
-            return [data_sampler.sample(1024) for _ in range(args.batch_size)]
+        def sample_batch(sample_size):
+            return [data_sampler.sample(sample_size) for _ in range(args.batch_size)]
 
 
         avg_loss = (0.0, 0.0)
@@ -267,12 +269,12 @@ def main():
                     sess.run(opt_reset)
                     for _ in range(args.accumulate_gradients):
                         sess.run(
-                            opt_compute, feed_dict={context: sample_batch()})
+                            opt_compute, feed_dict={context: sample_batch(sample_size)})
                     (v_loss, v_summary) = sess.run((opt_apply, summaries))
                 else:
                     (_, v_loss, v_summary) = sess.run(
                         (opt_apply, loss, summaries),
-                        feed_dict={context: sample_batch()})
+                        feed_dict={context: sample_batch(sample_size)})
 
                 summary_log.add_summary(v_summary, counter)
 
