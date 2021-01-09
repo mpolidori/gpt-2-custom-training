@@ -44,8 +44,8 @@ parser.add_argument('--restore_from', type=str, default='latest', help='Either "
 parser.add_argument('--run_name', type=str, default='run1', help='Run id. Name of subdirectory in checkpoint/ and samples/')
 parser.add_argument('--sample_every', metavar='N', type=int, default=100, help='Generate samples every N steps')
 parser.add_argument('--sample_length', metavar='TOKENS', type=int, default=1023, help='Sample this many tokens')
-parser.add_argument('--sample_size', metavar='N', type=int, default=256, help='Sample size in MB')
 parser.add_argument('--sample_num', metavar='N', type=int, default=1, help='Generate this many samples')
+parser.add_argument('--sample_size', metavar='N', type=int, default=256, help='Sample size in MB')
 parser.add_argument('--save_every', metavar='N', type=int, default=1000, help='Write a checkpoint every N steps')
 
 parser.add_argument('--val_dataset', metavar='PATH', type=str, default=None, help='Dataset for validation loss, defaults to --dataset.')
@@ -187,7 +187,7 @@ def main():
             # Sample from validation set once with fixed seed to make
             # it deterministic during training as well as across runs.
             val_data_sampler = Sampler(val_chunks, seed=1)
-            val_batches = [[val_data_sampler.sample(sample_size) for _ in range(args.val_batch_size)]
+            val_batches = [[val_data_sampler.sample(1024) for _ in range(args.val_batch_size)]
                            for _ in range(args.val_batch_count)]
 
         counter = 1
